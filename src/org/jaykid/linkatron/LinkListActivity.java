@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -21,25 +19,26 @@ import android.widget.ArrayAdapter;
 public class LinkListActivity extends ListActivity{
 
 	static final String START = "<pre>";
+	static final String URL = "url";
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-
-        // We'll define a custom screen layout here (the one shown above), but
-        // typically, you could just use the standard ListActivity layout.
         setContentView(R.layout.linkslist);
-
         
         String[] links = null;
+        String url = "";
+        Bundle bundle = getIntent().getExtras();
+        if(bundle.getString(URL)!= null)
+        	url = bundle.getString(URL);
+        
 		try {
-			links = getLinks("http://pastie.org/pastes/3278152/text");
+			links = getLinks(url);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
         
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1, links);
@@ -70,11 +69,9 @@ public class LinkListActivity extends ListActivity{
     	HttpGet request = new HttpGet(url);
     	HttpResponse response = client.execute(request);
     	
-    	
     	InputStream in = response.getEntity().getContent();
     	BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-    	while((line = reader.readLine()) != null)
-    	{
+    	while((line = reader.readLine()) != null){
     		if (copyingState) {
     			htmlLine = line;
     			break;

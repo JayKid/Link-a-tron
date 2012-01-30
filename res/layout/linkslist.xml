@@ -9,8 +9,9 @@
      <ListView android:id="@android:id/list"
                android:layout_width="match_parent"
                android:layout_height="match_parent"
-               android:background="#00FF00"
+               android:background="@color/TitlesDetail"
                android:layout_weight="1"
+               android:cacheColorHint="#00000000"
                android:drawSelectorOnTop="false"/>
 
      <TextView android:id="@android:id/empty"
