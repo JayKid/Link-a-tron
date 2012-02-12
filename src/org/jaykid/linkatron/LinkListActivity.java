@@ -11,15 +11,25 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.ClipboardManager;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 
 public class LinkListActivity extends ListActivity{
 
 	static final String START = "<pre>";
 	static final String URL = "url";
+	private static final CharSequence[] items = { "Open in a Browser", "Copy to clipboard" , "Share" };
+	private String url = "";
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState){
@@ -27,13 +37,13 @@ public class LinkListActivity extends ListActivity{
         setContentView(R.layout.linkslist);
         
         String[] links = null;
-        String url = "";
+        String pastieId = "";
         Bundle bundle = getIntent().getExtras();
         if(bundle.getString(URL)!= null)
-        	url = bundle.getString(URL);
+        	pastieId = bundle.getString(URL);
         
 		try {
-			links = getLinks(url);
+			links = getLinks(pastieId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
@@ -43,7 +53,47 @@ public class LinkListActivity extends ListActivity{
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1, links);
 		setListAdapter(adapter);
+		
+		this.getListView().setOnItemClickListener(new OnItemClickListener() {
+			public void onItemClick(AdapterView<?> parent, View view, int position, final long id) {
+				
+				url = getListView().getItemAtPosition(position).toString();
+				AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(view.getContext());
+				dialogBuilder.setTitle("Select an option:");
+				
+				dialogBuilder.setItems(items, new OnClickListener() {
+					public void onClick(DialogInterface dialog, int item) {
+	                	
+						fixUrlWithHttp();
+						switch(item){
+							case 0:
+								Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+								startActivity(browserIntent);
+								break;
+							case 1:
+								copyTextToClipboard(url);
+								break;
+							case 2:
+								Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+								sharingIntent.setType("text/plain");
+								sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, url);
+								startActivity(Intent.createChooser(sharingIntent,"Share using"));
+								break;
+						}
+						
+					}
+				});
+				AlertDialog ad = dialogBuilder.create();
+				ad.show();
+			}
+		});
+		
     }
+	
+	private void fixUrlWithHttp() {
+		if (!url.startsWith("http://") && !url.startsWith("https://"))
+			   url = "http://" + url;
+	}
 	
     private void copyTextToClipboard(String text) {
     	ClipboardManager clipboard = 
@@ -51,9 +101,9 @@ public class LinkListActivity extends ListActivity{
     	clipboard.setText(text);
     }
     
-    private String[] getLinks(String url) throws Exception, IOException {
+    private String[] getLinks(String pastieId) throws Exception, IOException {
     	
-    	String htmlLine = getHtmlLineFromUrl(url);
+    	String htmlLine = getHtmlLineFromUrl("http://pastie.org/pastes/"+pastieId+"/text");
     	
     	String[] links = htmlLine.split("<br/>");
     	
